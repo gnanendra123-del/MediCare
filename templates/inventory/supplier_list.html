@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Suppliers{% endblock %}
+{% block breadcrumb %}Inventory{% endblock %}
+{% block back_button %}<a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Suppliers{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span>Suppliers <span style="background:#e6f0ea;color:var(--primary);border-radius:20px;padding:2px 10px;font-size:.75rem;margin-left:6px;">{{ suppliers.count }}</span></span>
+    <a href="{% url 'supplier_add' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Supplier</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>Supplier Name</th><th>Contact</th><th>Phone</th><th>GSTIN</th><th>Drug License</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for s in suppliers %}
+      <tr>
+        <td><strong style="font-size:.875rem;">{{ s.name }}</strong></td>
+        <td style="font-size:.83rem;color:var(--text-muted);">{{ s.contact_person|default:"—" }}</td>
+        <td style="font-size:.83rem;">{{ s.phone }}</td>
+        <td style="font-size:.8rem;font-family:monospace;">{{ s.gstin|default:"—" }}</td>
+        <td style="font-size:.8rem;color:var(--text-muted);">{{ s.drug_license|default:"—" }}</td>
+        <td>
+          <div class="d-flex gap-1">
+            <a href="{% url 'supplier_detail' s.pk %}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+            <a href="{% url 'supplier_edit' s.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="bi bi-pencil"></i></a>
+            <a href="{% url 'supplier_ledger' s.pk %}" class="btn btn-sm btn-outline-secondary" title="Ledger"><i class="bi bi-journal-text"></i></a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="empty-state"><i class="bi bi-truck"></i><p>No suppliers yet. <a href="{% url 'supplier_add' %}">Add one</a></p></div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

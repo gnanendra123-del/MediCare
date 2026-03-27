@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% block title %}Point of Sale{% endblock %}
+{% block page_title %}Point of Sale{% endblock %}
+{% block breadcrumb %}MediCare Billing Counter{% endblock %}
+{% block extra_css %}
+<style>
+.pos-wrap { display:grid; grid-template-columns:1fr 360px; gap:16px; height:calc(100vh - 140px); }
+.pos-left { display:flex; flex-direction:column; gap:12px; overflow:hidden; min-height:0; }
+.pos-right { display:flex; flex-direction:column; gap:0; background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow); overflow:hidden; }
+
+/* Search */
+.search-wrap { position:relative; }
+.search-results {
+  position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:500;
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+  box-shadow:var(--shadow-md); max-height:300px; overflow-y:auto; display:none;
+}
+.sr-item {
+  padding:11px 16px; cursor:pointer; border-bottom:1px solid #f0f5f2;
+  transition:background .12s; display:flex; justify-content:space-between; align-items:center;
+}
+.sr-item:last-child { border-bottom:none; }
+.sr-item:hover { background:#f5faf7; }
+.sr-item-left { flex:1; min-width:0; }
+.sr-item-name { font-size:.875rem; font-weight:600; color:var(--text); }
+.sr-item-sub { font-size:.75rem; color:var(--text-muted); margin-top:2px; }
+.sr-item-right { text-align:right; flex-shrink:0; margin-left:12px; }
+.sr-price { font-size:.95rem; font-weight:700; color:var(--primary); }
+.sr-stock { font-size:.72rem; color:var(--text-muted); }
+
+/* Cart */
+.cart-box { flex:1; overflow:hidden; display:flex; flex-direction:column; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow); }
+.cart-head { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+.cart-head-title { font-size:.875rem; font-weight:600; }
+.cart-items-wrap { flex:1; overflow-y:auto; }
+.cart-item {
+  padding:12px 16px; border-bottom:1px solid #f0f5f2;
+  display:grid; grid-template-columns:1fr 90px 80px 80px 32px; gap:8px; align-items:center;
+}
+.cart-item:last-child { border-bottom:none; }
+.ci-name { font-size:.83rem; font-weight:600; color:var(--text); }
+.ci-sub { font-size:.72rem; color:var(--text-muted); margin-top:1px; }
+.ci-qty { display:flex; align-items:center; gap:4px; }
+.ci-qty button { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:var(--surface2); font-size:.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .12s; }
+.ci-qty button:hover { background:#e6eeea; }
+.ci-qty input { width:36px; text-align:center; border:1px solid var(--border); border-radius:6px; font-size:.82rem; padding:2px 0; }
+.ci-total { font-size:.85rem; font-weight:700; color:var(--primary); text-align:right; }
+
+/* Bill panel */
+.bill-head { padding:16px 18px; border-bottom:1px solid var(--border); background:linear-gradient(135deg,#0a6640,#0d8050); }
+.bill-head-title { font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.7); }
+.bill-body { padding:16px 18px; flex:1; overflow-y:auto; }
+.bill-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:.83rem; }
+.bill-row-label { color:var(--text-muted); }
+.bill-row-val { font-weight:500; color:var(--text); }
+.bill-total-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:2px solid var(--border); margin-top:4px; }
+.bill-total-label { font-size:1rem; font-weight:700; }
+.bill-total-val { font-size:1.4rem; font-weight:800; color:var(--primary); }
+.pay-btns { display:flex; gap:6px; margin:12px 0; }
+.pay-btn { flex:1; padding:8px 4px; border-radius:8px; border:1.5px solid var(--border); background:var(--surface2); font-size:.77rem; font-weight:600; cursor:pointer; text-align:center; transition:all .15s; color:var(--text-muted); }
+.pay-btn.active { border-color:var(--primary); background:rgba(10,102,64,.08); color:var(--primary); }
+.bill-footer { padding:14px 18px; border-top:1px solid var(--border); background:var(--surface2); }
+.complete-btn {
+  width:100%; padding:14px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,#0a6640,#0d8050); color:#fff;
+  font-size:1rem; font-weight:700; cursor:pointer; font-family:'Outfit',sans-serif;
+  letter-spacing:.3px; transition:opacity .18s; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.complete-btn:hover { opacity:.9; }
+.complete-btn:disabled { opacity:.5; cursor:not-allowed; }
+.clear-btn { width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text-muted); font-size:.82rem; cursor:pointer; margin-top:8px; transition:background .15s; font-family:'Outfit',sans-serif; }
+.clear-btn:hover { background:#fee2e2; color:var(--danger); border-color:#fcc; }
+
+/* Scanner modal */
+.scanner-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:2000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.scanner-box { background:#000; border-radius:16px; overflow:hidden; width:360px; position:relative; }
+.scanner-header { padding:14px 18px; background:rgba(255,255,255,.05); display:flex; justify-content:space-between; align-items:center; }
+.scanner-header span { color:#fff; font-weight:600; font-size:.9rem; }
+.scanner-header button { background:rgba(255,255,255,.1); border:none; color:#fff; width:30px; height:30px; border-radius:8px; cursor:pointer; font-size:1rem; }
+#scannerVideo { width:100%; height:260px; object-fit:cover; display:block; }
+.scanner-line { position:absolute; left:20px; right:20px; height:2px; background:var(--accent); box-shadow:0 0 8px var(--accent); animation:scan 2s ease-in-out infinite; }
+@keyframes scan { 0%,100%{top:80px} 50%{top:260px} }
+.scanner-hint { padding:12px; text-align:center; color:rgba(255,255,255,.5); font-size:.8rem; background:rgba(255,255,255,.03); }
+
+/* Drug interaction */
+.interaction-warn { background:#fff8e1; border:1px solid #f59e0b; border-radius:10px; padding:12px 16px; font-size:.82rem; color:#78350f; }
+.interaction-warn strong { color:#92400e; }
+
+/* Empty state */
+.cart-empty { text-align:center; padding:40px 20px; color:var(--text-muted); }
+.cart-empty i { font-size:3rem; opacity:.2; display:block; margin-bottom:10px; }
+.cart-empty p { font-size:.85rem; }
+
+/* Loyalty badge */
+.loyalty-pill { background:linear-gradient(135deg,#fef3c7,#fde68a); border:1px solid #f59e0b; border-radius:8px; padding:8px 12px; font-size:.78rem; color:#78350f; display:flex; align-items:center; gap:6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pos-wrap">
+  <!-- LEFT PANEL -->
+  <div class="pos-left">
+
+    <!-- Top bar: search + customer + prescription -->
+    <div class="card">
+      <div class="card-body py-3">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-5">
+            <div class="search-wrap">
+              <div class="input-group">
+                <span class="input-group-text" style="background:var(--primary);border-color:var(--primary);color:#fff;"><i class="bi bi-search"></i></span>
+                <input type="text" id="medSearch" class="form-control" placeholder="Search medicine by name or barcode…" autocomplete="off" style="border-left:none;">
+                <button id="scanBtn" class="btn" style="background:var(--surface2);border:1.5px solid var(--border);border-left:none;color:var(--text-muted);" title="Camera Barcode Scanner">
+                  <i class="bi bi-upc-scan"></i>
+                </button>
+              </div>
+              <div class="search-results" id="searchResults"></div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <select id="customerSel" class="form-select">
+              <option value="">👤 Walk-in Customer</option>
+              {% for c in customers %}<option value="{{ c.id }}" data-points="{{ c.loyalty_points }}">{{ c.name }} · {{ c.phone }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select id="prescSel" class="form-select">
+              <option value="">No Prescription</option>
+              {% for rx in prescriptions %}<option value="{{ rx.id }}">Rx-{{ rx.id }}: {{ rx.customer.name }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drug interaction warning -->
+    <div class="interaction-warn d-none" id="interactionWarn">
+      <strong><i class="bi bi-exclamation-triangle-fill me-2"></i>Drug Interaction Warning</strong>
+      <div id="interactionDetails" class="mt-1"></div>
+    </div>
+
+    <!-- Cart -->
+    <div class="cart-box">
+      <div class="cart-head">
+        <span class="cart-head-title"><i class="bi bi-cart3 me-2" style="color:var(--primary);"></i>Cart</span>
+        <span id="cartCount" style="background:var(--accent-dim);color:var(--primary);border-radius:20px;padding:2px 12px;font-size:.75rem;font-weight:600;">0 items</span>
+      </div>
+      <div class="cart-items-wrap" id="cartItems">
+        <div class="cart-empty" id="cartEmpty">
+          <i class="bi bi-bag"></i>
+          <p>Search and add medicines to start billing</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Bill -->
+  <div class="pos-right">
+    <div class="bill-head">
+      <div class="bill-head-title">Bill Summary</div>
+    </div>
+    <div class="bill-body">
+      <div class="bill-row"><span class="bill-row-label">Subtotal</span><span class="bill-row-val" id="bSubtotal">₹0.00</span></div>
+      <div class="bill-row"><span class="bill-row-label">CGST</span><span class="bill-row-val" id="bCGST">₹0.00</span></div>
+      <div class="bill-row"><span class="bill-row-label">SGST</span><span class="bill-row-val" id="bSGST">₹0.00</span></div>
+      <div class="bill-row" style="align-items:center;">
+        <span class="bill-row-label">Discount (₹)</span>
+        <input type="number" id="discountInp" value="0" min="0" style="width:90px;text-align:right;border:1.5px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.85rem;font-family:'Outfit',sans-serif;">
+      </div>
+      <div class="bill-total-row">
+        <span class="bill-total-label">TOTAL</span>
+        <span class="bill-total-val" id="bTotal">₹0.00</span>
+      </div>
+
+      <div class="section-title mb-2 mt-2">Payment Method</div>
+      <div class="pay-btns">
+        <div class="pay-btn active" data-pay="cash" onclick="setPayment(this)">💵 Cash</div>
+        <div class="pay-btn" data-pay="upi" onclick="setPayment(this)">📱 UPI</div>
+        <div class="pay-btn" data-pay="card" onclick="setPayment(this)">💳 Card</div>
+        <div class="pay-btn" data-pay="credit" onclick="setPayment(this)">📋 Credit</div>
+      </div>
+
+      <div class="loyalty-pill d-none" id="loyaltyInfo">
+        <i class="bi bi-star-fill"></i>
+        <span>Customer has <strong id="loyaltyPts">0</strong> pts · Will earn <strong id="ptsEarn">0</strong> pts</span>
+      </div>
+
+      <div class="mt-3">
+        <textarea id="saleNotes" class="form-control" rows="2" placeholder="Notes (optional)…" style="font-size:.82rem;resize:none;"></textarea>
+      </div>
+    </div>
+    <div class="bill-footer">
+      <button class="complete-btn" id="completeBtn" disabled onclick="completeSale()">
+        <i class="bi bi-check-circle-fill"></i> Complete Sale
+      </button>
+      <button class="clear-btn" onclick="clearCart()"><i class="bi bi-trash me-1"></i>Clear Cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- Camera Scanner Overlay -->
+<div class="scanner-overlay d-none" id="scannerOverlay">
+  <div class="scanner-box">
+    <div class="scanner-header">
+      <span><i class="bi bi-upc-scan me-2"></i>Scan Barcode</span>
+      <button onclick="closeScanner()">✕</button>
+    </div>
+    <div style="position:relative;">
+      <video id="scannerVideo" autoplay playsinline muted></video>
+      <div class="scanner-line" id="scanLine"></div>
+    </div>
+    <div class="scanner-hint">Point camera at the medicine box barcode</div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="border-radius:16px;border:none;overflow:hidden;">
+      <div class="modal-body text-center p-4">
+        <div style="width:64px;height:64px;background:#d1fae5;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem;">✅</div>
+        <h5 style="font-weight:700;margin-bottom:4px;">Sale Complete!</h5>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:4px;">Invoice: <strong id="invNum" style="color:var(--primary);"></strong></p>
+        <p class="d-none" id="ptsMsg" style="color:#78350f;font-size:.8rem;background:#fef3c7;border-radius:6px;padding:4px 10px;"></p>
+        <div class="d-flex gap-2 mt-3">
+          <a id="printBtn" href="#" target="_blank" class="btn btn-primary flex-fill" style="font-size:.85rem;"><i class="bi bi-printer me-1"></i>Print</a>
+          <button class="btn btn-outline-secondary flex-fill" style="font-size:.85rem;" onclick="newSale()">New Sale</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<script>
+let cart = [];
+let payMethod = 'cash';
+let scanStream = null;
+let searchTimer;
+
+// ── Search ────────────────────────────────────────
+const searchInp = document.getElementById('medSearch');
+const searchRes = document.getElementById('searchResults');
+
+searchInp.addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+  if (q.length < 2) { searchRes.style.display='none'; return; }
+  searchTimer = setTimeout(() => doSearch(q), 280);
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#medSearch') && !e.target.closest('.search-results'))
+    searchRes.style.display='none';
+});
+
+function doSearch(q) {
+  fetch('/inventory/api/search/?q=' + encodeURIComponent(q))
+    .then(r => r.json()).then(data => {
+      if (!data.results.length) { searchRes.style.display='none'; return; }
+      searchRes.innerHTML = data.results.map(m => {
+        const schBadge = m.schedule !== 'OTC'
+          ? `<span style="background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:700;margin-left:4px;">${m.schedule}</span>` : '';
+        return `<div class="sr-item" onclick="addToCart(${JSON.stringify(m).replace(/"/g,'&quot;')})">
+          <div class="sr-item-left">
+            <div class="sr-item-name">${m.name} ${schBadge}</div>
+            <div class="sr-item-sub">${m.brand} · ${m.form}${m.strength?' '+m.strength:''} · Batch: ${m.batch_number} · Exp: ${m.expiry_date}</div>
+          </div>
+          <div class="sr-item-right">
+            <div class="sr-price">₹${parseFloat(m.selling_price).toFixed(2)}</div>
+            <div class="sr-stock">Stock: ${m.available_qty}</div>
+          </div>
+        </div>`;
+      }).join('');
+      searchRes.style.display='block';
+    }).catch(()=>{});
+}
+
+// ── Barcode Scanner (Camera) ──────────────────────
+document.getElementById('scanBtn').addEventListener('click', openScanner);
+
+function openScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  const video   = document.getElementById('scannerVideo');
+  overlay.classList.remove('d-none');
+
+  // Try getUserMedia first (most reliable)
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 640 }, height: { ideal: 480 } }
+  }).then(stream => {
+    scanStream = stream;
+    video.srcObject = stream;
+    video.play();
+
+    // Give video a moment to start then init QuaggaJS on the live stream
+    setTimeout(() => {
+      if (typeof Quagga === 'undefined') {
+        // Fallback: manual barcode entry
+        closeScanner();
+        const code = prompt('Camera scanner unavailable. Enter barcode manually:');
+        if (code) { searchInp.value = code; doSearch(code); }
+        return;
+      }
+      Quagga.init({
+        inputStream: {
+          name: 'Live',
+          type: 'LiveStream',
+          target: video,
+          constraints: { facingMode: 'environment' },
+        },
+        decoder: { readers: ['ean_reader','ean_8_reader','code_128_reader','code_39_reader','upc_reader','upc_e_reader'] },
+        locate: true,
+        numOfWorkers: 2,
+      }, err => {
+        if (err) {
+          console.warn('Quagga init error:', err);
+          // Stream is fine, just decode frames manually or let user type
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(result => {
+        const code = result.codeResult.code;
+        if (!code) return;
+        Quagga.stop();
+        closeScanner();
+        searchInp.value = code;
+        doSearch(code);
+      });
+    }, 800);
+
+  }).catch(err => {
+    console.warn('Camera access denied:', err);
+    overlay.classList.add('d-none');
+    // Friendly fallback
+    const code = prompt('Camera access denied.\nEnter barcode manually (or connect USB barcode scanner):');
+    if (code && code.trim()) { searchInp.value = code.trim(); doSearch(code.trim()); }
+  });
+}
+
+function closeScanner() {
+  document.getElementById('scannerOverlay').classList.add('d-none');
+  if (typeof Quagga !== 'undefined') { try { Quagga.stop(); } catch(e){} }
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const video = document.getElementById('scannerVideo');
+  video.srcObject = null;
+}
+
+// Close overlay on background click
+document.getElementById('scannerOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeScanner();
+});
+
+// ── Cart ──────────────────────────────────────────
+function addToCart(med) {
+  med.unit_price = parseFloat(med.selling_price);
+  searchRes.style.display='none';
+  searchInp.value = '';
+  const ex = cart.find(i => i.batch_id === med.batch_id);
+  if (ex) {
+    if (ex.qty < med.available_qty) ex.qty++;
+    else { showToast('Max available stock reached!', 'warning'); return; }
+  } else {
+    cart.push({ ...med, qty: 1, disc: 0 });
+  }
+  renderCart();
+  checkInteractions();
+}
+
+function renderCart() {
+  const items = document.getElementById('cartItems');
+  const empty = document.getElementById('cartEmpty');
+  const countEl = document.getElementById('cartCount');
+  const btn = document.getElementById('completeBtn');
+
+  if (!cart.length) {
+    items.innerHTML = '';
+    empty.style.display = 'block';
+    items.appendChild(empty);
+    countEl.textContent = '0 items';
+    btn.disabled = true;
+    updateBill();
+    return;
+  }
+  empty.style.display = 'none';
+  countEl.textContent = `${cart.length} item${cart.length>1?'s':''}`;
+  btn.disabled = false;
+
+  items.innerHTML = cart.map((item, i) => {
+    const taxable = item.unit_price * item.qty * (1 - item.disc/100);
+    const gst     = taxable * (item.gst_rate / 100);
+    const total   = taxable + gst;
+    const rxBadge = item.prescription_required
+      ? `<span style="background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 5px;font-size:.63rem;font-weight:700;margin-left:4px;">Rx</span>` : '';
+    return `<div class="cart-item">
+      <div>
+        <div class="ci-name">${item.name}${rxBadge}</div>
+        <div class="ci-sub">${item.brand} · ${item.batch_number} · Exp: ${item.expiry_date}</div>
+      </div>
+      <div class="ci-qty">
+        <button onclick="chgQty(${i},-1)">−</button>
+        <input type="number" value="${item.qty}" min="1" max="${item.available_qty}" onchange="setQty(${i},this.value)" style="width:36px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:3px 0;font-size:.82rem;">
+        <button onclick="chgQty(${i},1)">+</button>
+      </div>
+      <div style="font-size:.8rem;color:var(--text-muted);">₹${item.unit_price.toFixed(2)}<br><span style="font-size:.7rem;">GST ${item.gst_rate}%</span></div>
+      <div class="ci-total">₹${total.toFixed(2)}</div>
+      <button onclick="rmItem(${i})" style="background:none;border:none;color:#ccc;cursor:pointer;font-size:1rem;padding:0;" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='#ccc'">✕</button>
+    </div>`;
+  }).join('');
+  items.appendChild(empty);
+  updateBill();
+}
+
+function chgQty(i, d) {
+  cart[i].qty = Math.max(1, Math.min(cart[i].available_qty, cart[i].qty + d));
+  renderCart();
+}
+function setQty(i, v) {
+  cart[i].qty = Math.max(1, Math.min(cart[i].available_qty, parseInt(v)||1));
+  renderCart();
+}
+function rmItem(i) { cart.splice(i,1); renderCart(); checkInteractions(); }
+function clearCart() { cart=[]; renderCart(); document.getElementById('interactionWarn').classList.add('d-none'); }
+
+// ── Bill ──────────────────────────────────────────
+function updateBill() {
+  let sub=0, gstTot=0;
+  cart.forEach(item => {
+    const tax = item.unit_price * item.qty * (1 - item.disc/100);
+    sub += tax;
+    gstTot += tax * (item.gst_rate/100);
+  });
+  const disc  = parseFloat(document.getElementById('discountInp').value)||0;
+  const total = Math.max(0, sub + gstTot - disc);
+  document.getElementById('bSubtotal').textContent = '₹' + sub.toFixed(2);
+  document.getElementById('bCGST').textContent     = '₹' + (gstTot/2).toFixed(2);
+  document.getElementById('bSGST').textContent     = '₹' + (gstTot/2).toFixed(2);
+  document.getElementById('bTotal').textContent    = '₹' + total.toFixed(2);
+  // loyalty
+  const custSel = document.getElementById('customerSel');
+  const loyDiv  = document.getElementById('loyaltyInfo');
+  if (custSel.value) {
+    const pts = parseInt(custSel.options[custSel.selectedIndex].dataset.points||0);
+    const earn = Math.floor(total/10);
+    document.getElementById('loyaltyPts').textContent = pts;
+    document.getElementById('ptsEarn').textContent    = earn;
+    loyDiv.classList.remove('d-none');
+  } else loyDiv.classList.add('d-none');
+}
+document.getElementById('discountInp').addEventListener('input', updateBill);
+document.getElementById('customerSel').addEventListener('change', updateBill);
+
+// ── Payment ───────────────────────────────────────
+function setPayment(el) {
+  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  payMethod = el.dataset.pay;
+}
+
+// ── Drug Interactions ─────────────────────────────
+function checkInteractions() {
+  if (cart.length < 2) { document.getElementById('interactionWarn').classList.add('d-none'); return; }
+  const drugs = cart.map(i => 'drugs[]=' + encodeURIComponent(i.name)).join('&');
+  fetch('/sales/api/drug-interaction/?' + drugs)
+    .then(r => r.json()).then(data => {
+      const warn = document.getElementById('interactionWarn');
+      if (data.interactions && data.interactions.length) {
+        document.getElementById('interactionDetails').innerHTML =
+          data.interactions.map(i => `<div class="mt-1"><strong>${i.drug}:</strong> ${i.warning.substring(0,200)}…</div>`).join('');
+        warn.classList.remove('d-none');
+      } else warn.classList.add('d-none');
+    }).catch(()=>{});
+}
+
+// ── Complete Sale ─────────────────────────────────
+function completeSale() {
+  if (!cart.length) return;
+  const disc    = parseFloat(document.getElementById('discountInp').value)||0;
+  const custId  = document.getElementById('customerSel').value || null;
+  const prescId = document.getElementById('prescSel').value || null;
+  const btn     = document.getElementById('completeBtn');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing…';
+
+  fetch('/sales/create/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+    body: JSON.stringify({
+      customer_id: custId, prescription_id: prescId,
+      payment_method: payMethod, discount_amount: disc,
+      notes: document.getElementById('saleNotes').value,
+      items: cart.map(item => ({
+        batch_id: item.batch_id, quantity: item.qty,
+        unit_price: item.unit_price, discount_percent: item.disc, gst_rate: item.gst_rate,
+      }))
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Complete Sale';
+    if (data.success) {
+      document.getElementById('invNum').textContent = data.invoice_number;
+      document.getElementById('printBtn').href = '/sales/' + data.sale_id + '/invoice/';
+      const total = parseFloat(document.getElementById('bTotal').textContent.replace('₹',''));
+      const pts   = Math.floor(total/10);
+      const ptsMsg = document.getElementById('ptsMsg');
+      if (pts > 0 && custId) { ptsMsg.textContent = '⭐ Earned ' + pts + ' loyalty points!'; ptsMsg.classList.remove('d-none'); }
+      else ptsMsg.classList.add('d-none');
+      new bootstrap.Modal(document.getElementById('successModal')).show();
+      clearCart();
+      document.getElementById('discountInp').value = 0;
+      document.getElementById('saleNotes').value = '';
+    } else {
+      showToast('Error: ' + data.error, 'danger');
+    }
+  })
+  .catch(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Complete Sale';
+    showToast('Network error. Please try again.', 'danger');
+  });
+}
+
+function newSale() { bootstrap.Modal.getInstance(document.getElementById('successModal')).hide(); }
+
+function showToast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = `alert alert-${type} position-fixed`;
+  t.style.cssText = 'top:80px;right:24px;z-index:9999;min-width:280px;box-shadow:var(--shadow-md);';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+{% endblock %}

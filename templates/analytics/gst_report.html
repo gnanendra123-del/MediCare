@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}GST Report{% endblock %}
+{% block breadcrumb %}Analytics{% endblock %}
+{% block back_button %}<a href="{% url 'analytics_dashboard' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}GST Report{% endblock %}
+{% block content %}
+
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Month</label>
+        <input type="month" name="month" class="form-control" value="{{ month }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+      </div>
+      <div class="col-md-7 text-end">
+        <a href="{% url 'export_gst_excel' %}?month={{ month }}" class="btn btn-success">
+          <i class="bi bi-file-earmark-excel me-1"></i>Export to Excel (.xlsx)
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-3">
+  <div class="col-sm-3">
+    <div class="card text-center p-3">
+      <div class="text-muted small">Taxable Amount</div>
+      <div class="fw-bold fs-5">₹{{ totals.subtotal|default:"0"|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card text-center p-3">
+      <div class="text-muted small">CGST</div>
+      <div class="fw-bold fs-5 text-warning">₹{{ totals.cgst|default:"0"|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card text-center p-3">
+      <div class="text-muted small">SGST</div>
+      <div class="fw-bold fs-5 text-warning">₹{{ totals.sgst|default:"0"|floatformat:2 }}</div>
+    </div>
+  </div>
+  <div class="col-sm-3">
+    <div class="card text-center p-3">
+      <div class="text-muted small">Total Revenue</div>
+      <div class="fw-bold fs-5 text-success">₹{{ totals.total|default:"0"|floatformat:2 }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice-wise table -->
+<div class="card">
+  <div class="card-header">Invoice-wise GST Breakup — {{ month }}</div>
+  <div class="table-responsive">
+    <table class="table table-sm mb-0">
+      <thead>
+        <tr>
+          <th>Invoice No.</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th class="text-end">Taxable</th>
+          <th class="text-end">CGST</th>
+          <th class="text-end">SGST</th>
+          <th class="text-end">Total</th>
+          <th>Payment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in sales %}
+        <tr>
+          <td class="font-monospace small text-primary">{{ sale.invoice_number }}</td>
+          <td class="small">{{ sale.sale_date|date:"d-m-Y" }}</td>
+          <td class="small">{{ sale.customer.name|default:"Walk-in" }}</td>
+          <td class="text-end small">₹{{ sale.subtotal }}</td>
+          <td class="text-end small">₹{{ sale.cgst_amount }}</td>
+          <td class="text-end small">₹{{ sale.sgst_amount }}</td>
+          <td class="text-end fw-semibold small">₹{{ sale.total_amount }}</td>
+          <td>
+            {% if sale.payment_method == 'cash' %}<span class="badge bg-success">Cash</span>
+            {% elif sale.payment_method == 'upi' %}<span class="badge bg-primary">UPI</span>
+            {% elif sale.payment_method == 'card' %}<span class="badge bg-info">Card</span>
+            {% else %}<span class="badge bg-warning text-dark">Credit</span>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-file-earmark-x" style="font-size:2rem;opacity:.3;display:block;margin-bottom:.5rem;"></i>
+            No sales for {{ month }}. Try a different month.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block breadcrumb %}Good to see you, {{ user.get_full_name|default:user.username }}{% endblock %}
+{% block content %}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#0a6640,#0d8050);">
+      <i class="bi bi-capsule-pill stat-icon"></i>
+      <div><div class="stat-val">{{ total_medicines }}</div><div class="stat-lbl">Total Medicines</div></div>
+      <a href="{% url 'medicine_list' %}" class="stat-link">View all <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+      <i class="bi bi-currency-rupee stat-icon"></i>
+      <div><div class="stat-val">₹{{ today_revenue|floatformat:0 }}</div><div class="stat-lbl">Today's Revenue</div></div>
+      <a href="{% url 'sale_list' %}" class="stat-link">{{ today_sales_count }} sales <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+      <i class="bi bi-exclamation-triangle stat-icon"></i>
+      <div><div class="stat-val">{{ expiring_30_count }}</div><div class="stat-lbl">Expiring ≤30 Days</div></div>
+      <a href="{% url 'expiry_alerts' %}" class="stat-link">View alerts <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="stat-card" style="background:linear-gradient(135deg,#e53935,#c62828);">
+      <i class="bi bi-box-seam stat-icon"></i>
+      <div><div class="stat-val">{{ low_stock_count }}</div><div class="stat-lbl">Low Stock Items</div></div>
+      <a href="{% url 'low_stock_list' %}" class="stat-link">View items <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+  <div class="card-body py-3">
+    <div class="section-title mb-3">Quick Actions</div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'pos' %}" class="btn btn-primary"><i class="bi bi-cart3 me-2"></i>New Sale</a>
+      <a href="{% url 'medicine_add' %}" class="btn btn-outline-primary"><i class="bi bi-plus-circle me-2"></i>Add Medicine</a>
+      <a href="{% url 'customer_add' %}" class="btn btn-outline-primary"><i class="bi bi-person-plus me-2"></i>Add Customer</a>
+      <a href="{% url 'po_create' %}" class="btn btn-outline-primary"><i class="bi bi-bag-plus me-2"></i>Purchase Order</a>
+      <a href="{% url 'prescription_add' %}" class="btn btn-outline-primary"><i class="bi bi-file-medical me-2"></i>Upload Rx</a>
+      <a href="{% url 'analytics_dashboard' %}" class="btn btn-outline-primary"><i class="bi bi-bar-chart-line me-2"></i>Reports</a>
+    </div>
+  </div>
+</div>
+
+<!-- Panels -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Expiring Soon</span>
+        <a href="{% url 'expiry_alerts' %}" class="btn btn-sm btn-outline-warning">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Medicine</th><th>Batch</th><th>Expires</th><th>Qty</th></tr></thead>
+          <tbody>
+          {% for b in expiring_soon %}
+          <tr>
+            <td><strong class="d-block" style="font-size:.85rem;">{{ b.medicine.name }}</strong><span style="font-size:.75rem;color:var(--text-muted);">{{ b.medicine.brand }}</span></td>
+            <td style="font-size:.8rem;color:var(--text-muted);">{{ b.batch_number }}</td>
+            <td><span class="badge" style="background:#fee2e2;color:#991b1b;">{{ b.expiry_date }}</span></td>
+            <td style="font-size:.85rem;">{{ b.quantity }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;"><i class="bi bi-check-circle-fill text-success me-1"></i>No medicines expiring in 30 days</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <span><i class="bi bi-box-seam text-danger me-2"></i>Low Stock</span>
+        <a href="{% url 'low_stock_list' %}" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Medicine</th><th>Stock</th><th>Reorder At</th><th>Action</th></tr></thead>
+          <tbody>
+          {% for m in low_stock_items %}
+          <tr>
+            <td><strong class="d-block" style="font-size:.85rem;">{{ m.name }}</strong><span style="font-size:.75rem;color:var(--text-muted);">{{ m.brand }}</span></td>
+            <td><span class="badge" style="background:#fee2e2;color:#991b1b;">{{ m.total_stock }}</span></td>
+            <td style="font-size:.82rem;color:var(--text-muted);">{{ m.reorder_level }}</td>
+            <td><a href="{% url 'po_create' %}" class="btn btn-sm btn-outline-primary" style="font-size:.73rem;padding:3px 10px;">Order</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="text-center py-4" style="color:var(--text-muted);font-size:.85rem;"><i class="bi bi-check-circle-fill text-success me-1"></i>All stocks are adequate</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if expired_count %}
+<div class="alert alert-danger mt-3 d-flex align-items-center gap-2 mb-0">
+  <i class="bi bi-x-octagon-fill"></i>
+  <span><strong>{{ expired_count }} expired batch(es)</strong> require immediate attention.</span>
+  <a href="{% url 'expiry_alerts' %}" class="btn btn-sm btn-danger ms-auto">Manage Now</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block breadcrumb %}Customers{% endblock %}
+{% block back_button %}<a href="{% url 'customer_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+  <div class="card">
+    <div class="card-header">{{ title }}</div>
+    <div class="card-body">
+      <form method="post">{% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Full Name*</label>{{ form.name }}</div>
+          <div class="col-md-6"><label class="form-label">Phone*</label>{{ form.phone }}</div>
+          <div class="col-md-6"><label class="form-label">Email</label>{{ form.email }}</div>
+          <div class="col-md-3"><label class="form-label">Gender</label>{{ form.gender }}</div>
+          <div class="col-md-3"><label class="form-label">Date of Birth</label>{{ form.date_of_birth }}</div>
+          <div class="col-12"><label class="form-label">Address</label>{{ form.address }}</div>
+        </div>
+        <div class="d-flex gap-2 mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-2"></i>Save Customer</button>
+          <a href="{% url 'customer_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div></div>
+{% endblock %}

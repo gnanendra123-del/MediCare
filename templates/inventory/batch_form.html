@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Add Batch{% endblock %}
+{% block page_title %}Add Stock Batch{% endblock %}
+{% block breadcrumb %}Inventory → {{ medicine.name }}{% endblock %}
+{% block back_button %}<a href="{% url 'medicine_detail' medicine.pk %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+  <div class="card">
+    <div class="card-header">Add Batch for <strong>{{ medicine.name }}</strong> <span style="font-size:.8rem;color:var(--text-muted);">({{ medicine.brand }})</span></div>
+    <div class="card-body">
+      <form method="post">{% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Batch Number*</label>{{ form.batch_number }}</div>
+          <div class="col-md-6"><label class="form-label">Quantity*</label>{{ form.quantity }}</div>
+          <div class="col-md-6"><label class="form-label">Expiry Date*</label>{{ form.expiry_date }}</div>
+          <div class="col-md-6"><label class="form-label">Manufacture Date</label>{{ form.manufacture_date }}</div>
+          <div class="col-md-4"><label class="form-label">Purchase Price (₹)</label>{{ form.purchase_price }}</div>
+          <div class="col-md-4"><label class="form-label">Selling Price (₹)</label>{{ form.selling_price }}</div>
+          <div class="col-md-4"><label class="form-label">MRP (₹)</label>{{ form.mrp }}</div>
+          <div class="col-md-4"><label class="form-label">GST Rate (%)</label>{{ form.gst_rate }}</div>
+        </div>
+        <div class="d-flex gap-2 mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-success px-4"><i class="bi bi-plus-circle me-2"></i>Add Batch & Update Stock</button>
+          <a href="{% url 'medicine_detail' medicine.pk %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div></div>
+{% endblock %}

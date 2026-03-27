@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Prescriptions{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block back_button %}<a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Prescriptions{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>Prescriptions</h5>
+  <a href="/prescriptions/add/" class="btn btn-primary"><i class="bi bi-upload me-2"></i>Upload Prescription</a>
+</div>
+<div class="mb-3">
+  {% for s,label in statuses %}<a href="?status={{ s }}" class="btn btn-sm {% if status == s %}btn-primary{% else %}btn-outline-secondary{% endif %} me-1">{{ label }}</a>{% endfor %}
+</div>
+<div class="card"><div class="card-body p-0">
+  <table class="table table-hover mb-0">
+    <thead><tr><th>ID</th><th>Customer</th><th>Doctor</th><th>Hospital</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for p in prescriptions %}
+      <tr>
+        <td><code>#{{ p.id }}</code></td>
+        <td><strong>{{ p.customer.name }}</strong><br><small class="text-muted">{{ p.customer.phone }}</small></td>
+        <td>{{ p.doctor_name }}</td>
+        <td>{{ p.hospital|default:"-" }}</td>
+        <td>{{ p.prescription_date }}</td>
+        <td>
+          {% if p.status == 'verified' %}<span class="badge bg-success">Verified</span>
+          {% elif p.status == 'dispensed' %}<span class="badge bg-primary">Dispensed</span>
+          {% elif p.status == 'rejected' %}<span class="badge bg-danger">Rejected</span>
+          {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
+        </td>
+        <td>
+          <a href="/prescriptions/{{ p.pk }}/" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>
+          {% if p.status == 'pending' %}<a href="/prescriptions/{{ p.pk }}/verify/" class="btn btn-sm btn-outline-success"><i class="bi bi-check2 me-1"></i>Verify</a>{% endif %}
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="7" class="text-center text-muted py-5">No prescriptions found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

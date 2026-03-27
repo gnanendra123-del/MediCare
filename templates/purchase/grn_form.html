@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Receive Goods - GRN{% endblock %}
+{% block breadcrumb %}Purchase Order{% endblock %}
+{% block back_button %}<a href="{% url 'po_detail' po.pk %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Goods Receipt Note{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>Receive Goods for PO #{{ po.po_number }}</h5>
+  <a href="/purchase/{{ po.pk }}/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back</a>
+</div>
+<form method="post">{% csrf_token %}
+  <div class="card mb-3"><div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4"><label class="form-label fw-semibold">Supplier Invoice No.</label><input name="invoice_number" class="form-control"></div>
+    </div>
+  </div></div>
+  <div class="card"><div class="card-header">Items to Receive</div><div class="card-body">
+    {% for item in po.items.all %}
+    <div class="card mb-3 border-start border-primary border-3">
+      <div class="card-body">
+        <h6 class="fw-bold">{{ item.medicine.name }} ({{ item.medicine.brand }})</h6>
+        <p class="text-muted mb-2">Ordered: {{ item.quantity_ordered }} | Already received: {{ item.quantity_received }}</p>
+        <div class="row g-2">
+          <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.8rem">Qty to Receive</label><input type="number" name="qty_{{ item.id }}" class="form-control form-control-sm" value="{{ item.quantity_ordered|add:item.quantity_received|add:'-'|add:item.quantity_received }}" min="0"></div>
+          <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.8rem">Batch Number *</label><input type="text" name="batch_{{ item.id }}" class="form-control form-control-sm" required></div>
+          <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.8rem">Expiry Date *</label><input type="date" name="expiry_{{ item.id }}" class="form-control form-control-sm" required></div>
+          <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.8rem">Selling Price</label><input type="number" name="selling_{{ item.id }}" class="form-control form-control-sm" value="{{ item.unit_price }}" step="0.01"></div>
+          <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.8rem">MRP</label><input type="number" name="mrp_{{ item.id }}" class="form-control form-control-sm" value="{{ item.unit_price }}" step="0.01"></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-success"><i class="bi bi-check2 me-2"></i>Confirm Receipt & Update Stock</button>
+  </div></div>
+</form>
+{% endblock %}

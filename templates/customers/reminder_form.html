@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Add Reminder{% endblock %}
+{% block breadcrumb %}Customer{% endblock %}
+{% block back_button %}<a href="{% url 'customer_detail' customer.pk %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Set Medicine Reminder{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>Set Reminder for {{ customer.name }}</h5>
+  <a href="/customers/{{ customer.pk }}/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back</a>
+</div>
+<div class="card" style="max-width:500px">
+  <div class="card-body p-4">
+    <form method="post">{% csrf_token %}
+      <div class="mb-3"><label class="form-label fw-semibold">Medicine Name *</label>{{ form.medicine_name }}</div>
+      <div class="mb-3"><label class="form-label fw-semibold">Reminder Date *</label>{{ form.reminder_date }}</div>
+      <div class="mb-3"><label class="form-label fw-semibold">Notes</label>{{ form.notes }}</div>
+      <button type="submit" class="btn btn-primary px-4"><i class="bi bi-bell me-2"></i>Set Reminder</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block breadcrumb %}Inventory → Medicines{% endblock %}
+{% block back_button %}<a href="{% url 'medicine_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-9">
+  <div class="card">
+    <div class="card-header">{{ title }}</div>
+    <div class="card-body">
+      <form method="post">{% csrf_token %}
+        <div class="row g-3">
+          <div class="col-md-6"><label class="form-label">Medicine Name*</label>{{ form.name }}</div>
+          <div class="col-md-6"><label class="form-label">Brand*</label>{{ form.brand }}</div>
+          <div class="col-md-6"><label class="form-label">Generic Name</label>{{ form.generic_name }}</div>
+          <div class="col-md-3"><label class="form-label">Form</label>{{ form.form }}</div>
+          <div class="col-md-3"><label class="form-label">Strength</label>{{ form.strength }}</div>
+          <div class="col-md-4"><label class="form-label">Category</label>{{ form.category }}</div>
+          <div class="col-md-4"><label class="form-label">Unit</label>{{ form.unit }}</div>
+          <div class="col-md-4"><label class="form-label">Schedule</label>{{ form.schedule }}</div>
+          <div class="col-md-4"><label class="form-label">HSN Code</label>{{ form.hsn_code }}</div>
+          <div class="col-md-4"><label class="form-label">Barcode</label>{{ form.barcode }}</div>
+          <div class="col-md-4"><label class="form-label">Rack Location</label>{{ form.rack_location }}</div>
+          <div class="col-md-4"><label class="form-label">Default Supplier</label>{{ form.default_supplier }}</div>
+          <div class="col-md-4"><label class="form-label">Reorder Level</label>{{ form.reorder_level }}</div>
+          <div class="col-md-4 d-flex align-items-end gap-3 flex-wrap pb-1">
+            <div class="form-check">{{ form.prescription_required }}<label class="form-check-label ms-2">Prescription Required</label></div>
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-4 pt-3 border-top">
+          <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-2"></i>Save Medicine</button>
+          <a href="{% url 'medicine_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div></div>
+{% endblock %}

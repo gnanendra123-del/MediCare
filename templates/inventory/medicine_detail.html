@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ medicine.name }}{% endblock %}
+{% block breadcrumb %}Inventory - Medicines{% endblock %}
+{% block back_button %}<a href="{% url 'medicine_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Medicine Detail{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div><h5 class="mb-0">{{ medicine.name }} <span class="text-muted fw-normal fs-6">({{ medicine.brand }})</span></h5></div>
+  <div class="d-flex gap-2">
+    <a href="/inventory/{{ medicine.pk }}/edit/" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>
+    <a href="/inventory/{{ medicine.pk }}/batch/add/" class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Add Batch</a>
+    <a href="/inventory/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">Medicine Info</div>
+      <div class="card-body">
+        <table class="table table-borderless mb-0" style="font-size:.875rem">
+          <tr><td class="text-muted">Generic Name</td><td><strong>{{ medicine.generic_name|default:"-" }}</strong></td></tr>
+          <tr><td class="text-muted">Form</td><td>{{ medicine.get_form_display }}</td></tr>
+          <tr><td class="text-muted">Strength</td><td>{{ medicine.strength|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Category</td><td>{{ medicine.category.name|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Schedule</td><td><span class="badge badge-schedule-{{ medicine.schedule }}">{{ medicine.schedule }}</span></td></tr>
+          <tr><td class="text-muted">Prescription</td><td>{% if medicine.prescription_required %}<span class="badge bg-danger">Required</span>{% else %}<span class="badge bg-success">Not Required</span>{% endif %}</td></tr>
+          <tr><td class="text-muted">HSN Code</td><td><code>{{ medicine.hsn_code|default:"-" }}</code></td></tr>
+          <tr><td class="text-muted">Barcode</td><td><code>{{ medicine.barcode|default:"-" }}</code></td></tr>
+          <tr><td class="text-muted">Rack</td><td>{{ medicine.rack_location|default:"-" }}</td></tr>
+          <tr><td class="text-muted">Total Stock</td><td><strong class="{% if medicine.is_low_stock %}text-danger{% else %}text-success{% endif %}">{{ medicine.total_stock }} {{ medicine.unit }}</strong></td></tr>
+          <tr><td class="text-muted">Reorder Level</td><td>{{ medicine.reorder_level }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">Batches in Stock</div>
+      <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>Batch No.</th><th>Mfg Date</th><th>Expiry</th><th>Status</th><th>Qty</th><th>Purchase Price</th><th>Selling Price</th><th>MRP</th><th>GST</th></tr></thead>
+          <tbody>
+            {% for b in batches %}
+            <tr {% if b.expiry_status == 'expired' %}style="background:#fee2e2"{% elif b.expiry_status == 'critical' %}style="background:#fff3cd"{% elif b.expiry_status == 'warning' %}style="background:#fff8e1"{% endif %}>
+              <td><code>{{ b.batch_number }}</code></td>
+              <td>{{ b.manufacture_date|default:"-" }}</td>
+              <td>{{ b.expiry_date }}</td>
+              <td>
+                {% if b.expiry_status == 'expired' %}<span class="badge bg-dark">Expired</span>
+                {% elif b.expiry_status == 'critical' %}<span class="badge bg-danger">{{ b.days_to_expiry }}d left</span>
+                {% elif b.expiry_status == 'warning' %}<span class="badge bg-warning text-dark">{{ b.days_to_expiry }}d left</span>
+                {% elif b.expiry_status == 'caution' %}<span class="badge bg-info text-dark">{{ b.days_to_expiry }}d left</span>
+                {% else %}<span class="badge bg-success">OK</span>{% endif %}
+              </td>
+              <td><strong>{{ b.quantity }}</strong></td>
+              <td>₹{{ b.purchase_price }}</td>
+              <td>₹{{ b.selling_price }}</td>
+              <td>₹{{ b.mrp }}</td>
+              <td>{{ b.gst_rate }}%</td>
+            </tr>
+            {% empty %}<tr><td colspan="9" class="text-center text-muted py-4">No batches found. <a href="/inventory/{{ medicine.pk }}/batch/add/">Add one?</a></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

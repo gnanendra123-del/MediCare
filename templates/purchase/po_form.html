@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}New Purchase Order{% endblock %}
+{% block breadcrumb %}Purchase Orders{% endblock %}
+{% block back_button %}<a href="{% url 'po_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}New Purchase Order{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>Create Purchase Order</h5>
+  <a href="/purchase/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back</a>
+</div>
+<form method="post" id="poForm">{% csrf_token %}
+  <input type="hidden" name="items_json" id="itemsJson" value="[]">
+  <div class="row g-3">
+    <div class="col-md-8">
+      <div class="card mb-3">
+        <div class="card-header">Order Details</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4"><label class="form-label fw-semibold">Supplier *</label>{{ form.supplier }}</div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Order Date</label>{{ form.order_date }}</div>
+            <div class="col-md-4"><label class="form-label fw-semibold">Expected Delivery</label>{{ form.expected_delivery }}</div>
+            <div class="col-12"><label class="form-label fw-semibold">Notes</label>{{ form.notes }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Order Items</span>
+          <button type="button" class="btn btn-sm btn-success" onclick="addRow()"><i class="bi bi-plus me-1"></i>Add Item</button>
+        </div>
+        <div class="card-body p-0">
+          <table class="table mb-0" id="itemsTable">
+            <thead><tr><th>Medicine</th><th>Qty</th><th>Unit Price (₹)</th><th>GST %</th><th>Total</th><th></th></tr></thead>
+            <tbody id="itemsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">Order Summary</div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">Subtotal</span><span id="poSubtotal">₹0.00</span></div>
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted">GST (~12%)</span><span id="poGST">₹0.00</span></div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span id="poTotal" class="text-primary">₹0.00</span></div>
+          <button type="submit" class="btn btn-primary w-100 mt-3" onclick="prepareSubmit()"><i class="bi bi-check2 me-2"></i>Create PO</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const medicines = {{ medicines|safe }};
+let rows = [];
+function addRow() {
+  const id = Date.now();
+  rows.push({id, medicine_id:'', quantity:1, unit_price:0, gst_rate:12});
+  renderRows();
+}
+function renderRows() {
+  document.getElementById('itemsBody').innerHTML = rows.map(r => `
+    <tr id="row${r.id}">
+      <td><select class="form-select form-select-sm" onchange="updateRow(${r.id},'medicine_id',this.value)">
+        <option value="">Select Medicine</option>
+        ${medicines.map(m=>`<option value="${m.id}" ${r.medicine_id==m.id?'selected':''}>${m.name} (${m.brand})</option>`).join('')}
+      </select></td>
+      <td><input type="number" class="form-control form-control-sm" value="${r.quantity}" min="1" onchange="updateRow(${r.id},'quantity',this.value)" style="width:70px"></td>
+      <td><input type="number" class="form-control form-control-sm" value="${r.unit_price}" min="0" step="0.01" onchange="updateRow(${r.id},'unit_price',this.value)" style="width:90px"></td>
+      <td><input type="number" class="form-control form-control-sm" value="${r.gst_rate}" min="0" onchange="updateRow(${r.id},'gst_rate',this.value)" style="width:60px"></td>
+      <td>₹${(r.unit_price*r.quantity).toFixed(2)}</td>
+      <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(${r.id})"><i class="bi bi-x"></i></button></td>
+    </tr>`).join('');
+  updateSummary();
+}
+function updateRow(id, field, val) {
+  const r = rows.find(r=>r.id===id);
+  r[field] = field==='medicine_id' ? val : parseFloat(val)||0;
+  renderRows();
+}
+function removeRow(id) { rows = rows.filter(r=>r.id!==id); renderRows(); }
+function updateSummary() {
+  const sub = rows.reduce((s,r)=>s+r.unit_price*r.quantity, 0);
+  const gst = sub * 0.12;
+  document.getElementById('poSubtotal').textContent = `₹${sub.toFixed(2)}`;
+  document.getElementById('poGST').textContent = `₹${gst.toFixed(2)}`;
+  document.getElementById('poTotal').textContent = `₹${(sub+gst).toFixed(2)}`;
+}
+function prepareSubmit() { document.getElementById('itemsJson').value = JSON.stringify(rows); }
+addRow();
+</script>
+{% endblock %}

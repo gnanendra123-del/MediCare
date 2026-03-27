@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}{{ sale.invoice_number }}{% endblock %}
+{% block breadcrumb %}Sales History{% endblock %}
+{% block back_button %}<a href="{% url 'sale_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Invoice {{ sale.invoice_number }}{% endblock %}
+{% block content %}
+<div class="row g-3">
+
+  <!-- Items table -->
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-receipt me-2"></i>Sale Items</span>
+        <a href="{% url 'invoice_pdf' sale.pk %}" class="btn btn-sm btn-primary" target="_blank">
+          <i class="bi bi-printer me-1"></i>Print PDF
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Batch / Expiry</th>
+              <th class="text-center">Qty</th>
+              <th class="text-end">Rate</th>
+              <th class="text-center">GST%</th>
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in sale.items.all %}
+            <tr>
+              <td>
+                <div class="fw-semibold small">{{ item.medicine.name }}</div>
+                <div class="text-muted" style="font-size:.75rem;">{{ item.medicine.brand }} | {{ item.medicine.strength }}</div>
+              </td>
+              <td class="small text-muted">
+                {{ item.batch.batch_number }}<br>
+                <span class="{% if item.batch.is_expired %}text-danger{% else %}text-muted{% endif %}">Exp: {{ item.batch.expiry_date }}</span>
+              </td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td class="text-end small">₹{{ item.unit_price }}</td>
+              <td class="text-center small">{{ item.gst_rate }}%</td>
+              <td class="text-end fw-semibold">₹{{ item.total_price }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill summary -->
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">Bill Summary</div>
+      <div class="card-body">
+        <dl class="row small mb-0">
+          <dt class="col-6 text-muted">Invoice No.</dt>
+          <dd class="col-6 fw-bold font-monospace text-primary">{{ sale.invoice_number }}</dd>
+
+          <dt class="col-6 text-muted">Date</dt>
+          <dd class="col-6">{{ sale.sale_date|date:"d M Y H:i" }}</dd>
+
+          <dt class="col-6 text-muted">Customer</dt>
+          <dd class="col-6">
+            {% if sale.customer %}
+              <a href="{% url 'customer_detail' sale.customer.pk %}">{{ sale.customer.name }}</a>
+            {% else %}Walk-in{% endif %}
+          </dd>
+
+          <dt class="col-6 text-muted">Payment</dt>
+          <dd class="col-6">
+            {% if sale.payment_method == 'cash' %}<span class="badge bg-success">Cash</span>
+            {% elif sale.payment_method == 'upi' %}<span class="badge bg-primary">UPI</span>
+            {% elif sale.payment_method == 'card' %}<span class="badge bg-info">Card</span>
+            {% else %}<span class="badge bg-warning text-dark">Credit</span>{% endif %}
+          </dd>
+
+          {% if sale.prescription %}
+          <dt class="col-6 text-muted">Prescription</dt>
+          <dd class="col-6"><a href="{% url 'prescription_detail' sale.prescription.pk %}">Rx-{{ sale.prescription.pk }}</a></dd>
+          {% endif %}
+
+          <dt class="col-6 text-muted">Billed By</dt>
+          <dd class="col-6 text-muted">{{ sale.created_by.get_full_name|default:sale.created_by.username|default:"-" }}</dd>
+        </dl>
+
+        <hr>
+
+        <dl class="row small mb-0">
+          <dt class="col-7 text-muted">Subtotal (taxable)</dt>
+          <dd class="col-5 text-end">₹{{ sale.subtotal }}</dd>
+
+          <dt class="col-7 text-muted">CGST</dt>
+          <dd class="col-5 text-end">₹{{ sale.cgst_amount }}</dd>
+
+          <dt class="col-7 text-muted">SGST</dt>
+          <dd class="col-5 text-end">₹{{ sale.sgst_amount }}</dd>
+
+          {% if sale.discount_amount %}
+          <dt class="col-7 text-muted">Discount</dt>
+          <dd class="col-5 text-end text-danger">- ₹{{ sale.discount_amount }}</dd>
+          {% endif %}
+        </dl>
+
+        <div class="d-flex justify-content-between fw-bold fs-5 mt-2 pt-2 border-top">
+          <span>TOTAL</span>
+          <span class="text-success">₹{{ sale.total_amount }}</span>
+        </div>
+
+        {% if sale.loyalty_points_earned %}
+        <div class="alert alert-info py-2 mt-2 mb-0 small">
+          <i class="bi bi-star-fill text-warning me-1"></i>
+          Earned <strong>{{ sale.loyalty_points_earned }}</strong> loyalty points
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

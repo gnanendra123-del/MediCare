@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Prescription #{{ prescription.id }}{% endblock %}
+{% block breadcrumb %}Prescriptions{% endblock %}
+{% block back_button %}<a href="{% url 'prescription_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Prescription Detail{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>Prescription #{{ prescription.id }}</h5>
+  <div class="d-flex gap-2">
+    {% if prescription.status == 'pending' %}<a href="/prescriptions/{{ prescription.pk }}/verify/" class="btn btn-success"><i class="bi bi-check2 me-2"></i>Verify</a>{% endif %}
+    <a href="/prescriptions/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-5">
+    <div class="card"><div class="card-header">Prescription Image</div><div class="card-body text-center">
+      <img src="{{ prescription.image.url }}" class="img-fluid rounded" style="max-height:500px" alt="Prescription">
+    </div></div>
+  </div>
+  <div class="col-md-7">
+    <div class="card"><div class="card-header">Details</div><div class="card-body">
+      <table class="table table-borderless" style="font-size:.875rem">
+        <tr><td class="text-muted">Customer</td><td><strong>{{ prescription.customer.name }}</strong> ({{ prescription.customer.phone }})</td></tr>
+        <tr><td class="text-muted">Doctor</td><td>{{ prescription.doctor_name }}</td></tr>
+        <tr><td class="text-muted">Hospital</td><td>{{ prescription.hospital|default:"-" }}</td></tr>
+        <tr><td class="text-muted">Date</td><td>{{ prescription.prescription_date }}</td></tr>
+        <tr><td class="text-muted">Status</td><td>
+          {% if prescription.status == 'verified' %}<span class="badge bg-success">Verified</span>
+          {% elif prescription.status == 'rejected' %}<span class="badge bg-danger">Rejected</span>
+          {% elif prescription.status == 'dispensed' %}<span class="badge bg-primary">Dispensed</span>
+          {% else %}<span class="badge bg-warning text-dark">Pending</span>{% endif %}
+        </td></tr>
+        {% if prescription.verified_by %}<tr><td class="text-muted">Verified By</td><td>{{ prescription.verified_by.username }}</td></tr>{% endif %}
+        <tr><td class="text-muted">Notes</td><td>{{ prescription.notes|default:"-" }}</td></tr>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

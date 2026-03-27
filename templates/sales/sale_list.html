@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Sales History{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+{% block back_button %}<a href="/" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Sales History{% endblock %}
+{% block content %}
+
+<!-- Filter bar -->
+<div class="card mb-3">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">From Date</label>
+        <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">To Date</label>
+        <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+        <a href="{% url 'sale_list' %}" class="btn btn-outline-secondary">Clear</a>
+      </div>
+      <div class="col-md-3 text-end">
+        <div class="text-muted small">Total Revenue</div>
+        <div class="fw-bold fs-5 text-primary">₹{{ total|floatformat:2 }}</div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Sales ({{ sales.count }})</span>
+    <a href="{% url 'pos' %}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg me-1"></i>New Sale</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Invoice No.</th>
+          <th>Date & Time</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Payment</th>
+          <th>Amount</th>
+          <th>Billed By</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr>
+          <td class="font-monospace fw-semibold small text-primary">{{ s.invoice_number }}</td>
+          <td class="small">{{ s.sale_date|date:"d M Y" }}<br><span class="text-muted">{{ s.sale_date|time:"H:i" }}</span></td>
+          <td class="small">{{ s.customer.name|default:"Walk-in" }}</td>
+          <td class="text-center"><span class="badge bg-light text-dark border">{{ s.items.count }}</span></td>
+          <td>
+            {% if s.payment_method == 'cash' %}<span class="badge bg-success">Cash</span>
+            {% elif s.payment_method == 'upi' %}<span class="badge bg-primary">UPI</span>
+            {% elif s.payment_method == 'card' %}<span class="badge bg-info">Card</span>
+            {% else %}<span class="badge bg-warning text-dark">Credit</span>{% endif %}
+          </td>
+          <td class="fw-bold text-success">₹{{ s.total_amount }}</td>
+          <td class="small text-muted">{{ s.created_by.username|default:"-" }}</td>
+          <td>
+            <a href="{% url 'sale_detail' s.pk %}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+            <a href="{% url 'invoice_pdf' s.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Print"><i class="bi bi-printer"></i></a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" class="text-center py-5 text-muted">
+          <i class="bi bi-receipt" style="font-size:2rem;opacity:.3;display:block;margin-bottom:.5rem;"></i>
+          No sales found for this period
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

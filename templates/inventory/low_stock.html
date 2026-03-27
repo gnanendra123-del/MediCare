@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Low Stock{% endblock %}
+{% block breadcrumb %}Inventory{% endblock %}
+{% block back_button %}<a href="{% url 'medicine_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Low Stock Alert{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5 class="mb-0">Low Stock Items <span class="badge bg-danger ms-2">{{ medicines|length }}</span></h5>
+  <a href="/purchase/create/" class="btn btn-success"><i class="bi bi-bag-plus me-2"></i>Create Purchase Order</a>
+</div>
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead><tr><th>Medicine</th><th>Category</th><th>Current Stock</th><th>Min Level</th><th>Default Supplier</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for m in medicines %}
+        <tr>
+          <td><strong>{{ m.name }}</strong> <span class="text-muted">{{ m.strength }}</span><br><small class="text-muted">{{ m.brand }}</small></td>
+          <td>{{ m.category.name|default:"-" }}</td>
+          <td><span class="low-stock-badge">{{ m.total_stock }} {{ m.unit }}</span></td>
+          <td class="text-muted">{{ m.reorder_level }}</td>
+          <td>{{ m.default_supplier.name|default:"Not set" }}</td>
+          <td><a href="/inventory/{{ m.pk }}/batch/add/" class="btn btn-sm btn-outline-success"><i class="bi bi-plus me-1"></i>Add Stock</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-check-circle text-success" style="font-size:2rem"></i><br>All stock levels are adequate!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

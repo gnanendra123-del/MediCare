@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}PO #{{ po.po_number }}{% endblock %}
+{% block breadcrumb %}Purchase Orders{% endblock %}
+{% block back_button %}<a href="{% url 'po_list' %}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>{% endblock %}
+{% block page_title %}Purchase Order Detail{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h5>PO #{{ po.po_number }} <span class="badge bg-{% if po.status == 'received' %}success{% elif po.status == 'partial' %}warning{% else %}secondary{% endif %} ms-2">{{ po.get_status_display }}</span></h5>
+  <div class="d-flex gap-2">
+    {% if po.status != 'received' %}<a href="/purchase/{{ po.pk }}/grn/" class="btn btn-success"><i class="bi bi-box-arrow-in-down me-2"></i>Receive Goods (GRN)</a>{% endif %}
+    <a href="/purchase/" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Back</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card"><div class="card-header">Order Info</div><div class="card-body">
+      <table class="table table-borderless mb-0" style="font-size:.875rem">
+        <tr><td class="text-muted">Supplier</td><td><strong>{{ po.supplier.name }}</strong></td></tr>
+        <tr><td class="text-muted">Order Date</td><td>{{ po.order_date }}</td></tr>
+        <tr><td class="text-muted">Expected Delivery</td><td>{{ po.expected_delivery|default:"-" }}</td></tr>
+        <tr><td class="text-muted">Created By</td><td>{{ po.created_by.username|default:"-" }}</td></tr>
+        <tr><td class="text-muted">Subtotal</td><td>₹{{ po.subtotal|floatformat:2 }}</td></tr>
+        <tr><td class="text-muted">GST</td><td>₹{{ po.gst_amount|floatformat:2 }}</td></tr>
+        <tr><td class="text-muted fw-bold">Total</td><td><strong class="text-primary">₹{{ po.total_amount|floatformat:2 }}</strong></td></tr>
+      </table>
+    </div></div>
+  </div>
+  <div class="col-md-8">
+    <div class="card"><div class="card-header">Items Ordered</div><div class="card-body p-0">
+      <table class="table mb-0">
+        <thead><tr><th>Medicine</th><th>Ordered</th><th>Received</th><th>Unit Price</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for item in po.items.all %}
+          <tr>
+            <td><strong>{{ item.medicine.name }}</strong><br><small class="text-muted">{{ item.medicine.brand }}</small></td>
+            <td>{{ item.quantity_ordered }}</td>
+            <td>{{ item.quantity_received }}</td>
+            <td>₹{{ item.unit_price }}</td>
+            <td>₹{{ item.total_price|floatformat:2 }}</td>
+            <td>{% if item.quantity_received >= item.quantity_ordered %}<span class="badge bg-success">Complete</span>{% elif item.quantity_received > 0 %}<span class="badge bg-warning text-dark">Partial</span>{% else %}<span class="badge bg-secondary">Pending</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
